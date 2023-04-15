@@ -1,5 +1,7 @@
 import os
+import sys
 import logging
+import argparse
 from dotenv import load_dotenv
 from langchain.document_loaders import UnstructuredPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -23,15 +25,23 @@ class GPTWorker:
         self._chat_history = [
             {
                 'role': 'system',
-                'content': f'Answer all user questions using the text provider\n. TEXT: {doc_chunk}'
+                'content': '\n'.join([
+                    'Answer all user questions using the text provider. Limit your response to 512 tokens.',
+                    f'TEXT: {doc_chunk}'
+                ])
             }
         ]
 
     def ask(self, query):
         self._chat_history.append({
             'role': 'user',
-            'content': query
+            'content': '\n'.join([
+                query
+                # f"Answer the question",
+                # 'Provide just 'non relevant information' as a response if text does not contain any relevant information. Limit your response to 512 tokens.
+            ])
         })
+        # logging.debug(self._chat_history)
         completion = openai.ChatCompletion.create(
             model=self._model,
             messages=self._chat_history
@@ -65,29 +75,39 @@ class GPTGrounding:
             'role': 'user',
             'content': f'QUESTION: {query}'
         })
+        # logging.debug(self._chat_history)
         completion = openai.ChatCompletion.create(
             model=self._model,
             messages=self._chat_history
         )
         assistant_response_message = completion.choices[0].message
         self._chat_history.append(assistant_response_message)
-        # self._chat_history = []
         return assistant_response_message['content']
 
 
-def configure_logging():
+def parse_args(args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--verbose", "-v", action="count")
+    parser.add_argument("--pdf_filepath", "-f", required=True, type=str)
+    return parser.parse_args(args)
+
+
+def configure_logging(verbose):
     logging.basicConfig(
         format="[%(levelname)s] %(name)s - %(message)s",
-        level='INFO',
+        level='DEBUG' if verbose else 'INFO',
     )
     logging.getLogger('unstructured_inference').setLevel(logging.ERROR)
     logging.getLogger('detectron2').setLevel(logging.ERROR)
     logging.getLogger('fvcore').setLevel(logging.ERROR)
+    logging.getLogger('pdfminer').setLevel(logging.ERROR)
+    logging.getLogger('urllib3').setLevel(logging.ERROR)
+    logging.getLogger('layoutparser').setLevel(logging.ERROR)
 
 
-def main():
+def main(args):
     load_dotenv()
-    configure_logging()
+    configure_logging(args.verbose)
     loader = PDFLoader()
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=4000,
@@ -95,13 +115,11 @@ def main():
     )
     openai.organization = os.environ['OPENAPI_ORG_ID']
     openai.api_key = os.environ['OPENAPI_API_KEY']
-    pdf_filepath = "./docs/Comet_Half-Year-Report-2022-short/Comet_Half-Year-Report-2022-short.pdf"
-    logging.info(f"Loading PDF File [{pdf_filepath}]...")
-    # pdf_file = loader.load("/Users/driangle/workplace/gg/books/dalle/dalle_2_prompt_book_1.0.2.pdf")
-    # pdf_doc = loader.load("/Users/driangle/Downloads/pml.howto.pdf")
-    pdf_doc = loader.load(pdf_filepath)
+    logging.info(f"Loading PDF File [{args.pdf_filepath}]...")
+    pdf_doc = loader.load(args.pdf_filepath)
     logging.info(
-        f"Successfully loaded PDF File [{pdf_filepath}], length: [{len(pdf_doc.page_content)}]")
+        f"Successfully loaded PDF File [{args.pdf_filepath}], length: [{len(pdf_doc.page_content)}]"
+    )
 
     logging.info("Splitting PDF File...")
     doc_chunks = splitter.split_documents([pdf_doc])
@@ -117,6 +135,8 @@ def main():
         try:
             logging.info("Ask a Question:\n")
             query = input()
+            if not query or not query.strip():
+                continue
             logging.info("Thinking...\n")
             logging.debug(f"Running [{len(workers)}] workers...")
             worker_outputs = [worker.ask(query) for worker in workers]
@@ -128,4 +148,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(parse_args(sys.argv[1:]))
