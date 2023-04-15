@@ -3,6 +3,8 @@
 pip install -r requirements.txt
 ```
 
+Copy `.env.example` to a file called `.env` and fill it in with your own values
+
 ## How to Run
 ```
 python -m main -f "<pdf_filepath>"
