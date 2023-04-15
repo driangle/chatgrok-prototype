@@ -7,7 +7,6 @@ from langchain.document_loaders import UnstructuredPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import openai
 
-
 class PDFLoader:
 
     def load(self, filename):
@@ -106,6 +105,7 @@ def configure_logging(verbose):
 
 
 def main(args):
+    # Setup
     load_dotenv()
     configure_logging(args.verbose)
     loader = PDFLoader()
@@ -113,8 +113,11 @@ def main(args):
         chunk_size=4000,
         chunk_overlap=200
     )
+    grounding = GPTGrounding(os.environ['GPT_MODEL'])
     openai.organization = os.environ['OPENAPI_ORG_ID']
     openai.api_key = os.environ['OPENAPI_API_KEY']
+
+    # Ingest
     logging.info(f"Loading PDF File [{args.pdf_filepath}]...")
     pdf_doc = loader.load(args.pdf_filepath)
     logging.info(
@@ -126,11 +129,13 @@ def main(args):
 
     logging.info(f"Split document into [{len(doc_chunks)}] chunks")
 
+    # Build Workers
     workers = [
         GPTWorker(os.environ['GPT_MODEL'], doc_chunk)
         for doc_chunk in doc_chunks
     ]
-    grounding = GPTGrounding(os.environ['GPT_MODEL'])
+    
+    # Query Loop
     while True:
         try:
             logging.info("Ask a Question:\n")
