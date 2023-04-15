@@ -1,0 +1,7 @@
+# pip install langchain
+# pip installunstructured[local-inference]
+# pip install "detectron2@git+https://github.com/facebookresearch/detectron2.git@e2ce8dc#egg=detectron2"
+# pip install openai
+# pip install python-dotenv
+
+# mac only: brew install poppler
