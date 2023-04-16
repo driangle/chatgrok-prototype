@@ -4,8 +4,10 @@ import openai
 
 logger = logging.getLogger('chatgrok.multilane.worker')
 
+
 class GPTWorker:
     def __init__(self, model, doc_chunk, prompt_loader):
+        self._doc_chunk = doc_chunk
         self._model = model
         self._prompt_loader = prompt_loader
         system_preamble = self._prompt_loader.load(
@@ -24,12 +26,15 @@ class GPTWorker:
 
     def ask(self, query):
         user_prompt = self._prompt_loader.load('worker.ask')
+        template_input_variables = {'query': query}
+        if '{doc_chunk}' in user_prompt:
+            template_input_variables['doc_chunk'] = self._doc_chunk
         self._chat_history.append({
             'role': 'user',
             'content': PromptTemplate(
                 template=user_prompt,
-                input_variables=['query']
-            ).format(query=query)
+                input_variables=list(template_input_variables.keys())
+            ).format(**template_input_variables)
         })
         if logger.isEnabledFor(logging.DEBUG):
             import json
