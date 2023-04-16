@@ -1,35 +1,50 @@
+import logging
+from langchain.prompts import PromptTemplate
 import openai
 
 class GPTGrounding:
-    def __init__(self, model):
+    def __init__(self, model, prompt_loader):
         self._model = model
-        self._chat_history = [
-            {
-                'role': 'system',
-                'content': '\n'.join([
-                    'The user will give you a set of documents followed by a question.',
-                    'Each time try to answer the question using all previously received documents'
-                ])
-            }
-        ]
+        self._prompt_loader = prompt_loader
 
     def ask(self, query, worker_outputs):
-        self._chat_history.append({
+        system_preamble = self._prompt_loader.load(
+            'grounding.system_preamble', 
+            required=False
+        )
+        messages = [
+            {
+                'role': 'system',
+                'content': PromptTemplate(
+                    template=system_preamble,
+                    input_variables=[]
+                ).format()
+            }
+        ] if system_preamble else []
+        messages.append({
             'role': 'user',
-            'content': '\n'.join([f'\n\nDOCUMENT:\n{worker_output}\n\n'
-                                  for worker_output in worker_outputs
-                                  ])
+            'content': PromptTemplate(
+                template=self._prompt_loader.load('grounding.ask'),
+                input_variables=['worker_outputs', 'query']
+            ).format(worker_outputs='\n\n'.join(worker_outputs), query=query)
         })
-        self._chat_history.append({
-            'role': 'user',
-            'content': f'QUESTION: {query}'
-        })
-        # logging.debug(self._chat_history)
+
+        # messages.append({
+        #     'role': 'user',
+        #     'content': '\n'.join([f'\n\nDOCUMENT:\n{worker_output}\n\n'
+        #                           for worker_output in worker_outputs
+        #                           ])
+        # })
+        # messages.append({
+        #     'role': 'user',
+        #     'content': f'QUESTION: {query}'
+        # })
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            import json
+            print(json.dumps(messages, indent=4))
         completion = openai.ChatCompletion.create(
             model=self._model,
-            messages=self._chat_history
+            messages=messages
         )
         assistant_response_message = completion.choices[0].message
-        self._chat_history.append(assistant_response_message)
         return assistant_response_message['content']
-

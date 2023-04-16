@@ -1,0 +1,4 @@
+DOCUMENTS:
+{worker_outputs}
+
+QUESTION: {query}

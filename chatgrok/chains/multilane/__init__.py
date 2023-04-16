@@ -1,16 +1,19 @@
 import os
 import logging
-from chatgrok.chains.multilane.worker import GPTWorker
-from chatgrok.chains.multilane.grounding import GPTGrounding
+from .worker import GPTWorker
+from .grounding import GPTGrounding
+from .prompt_loader import PromptLoader
+
 
 class Multilane:
 
-    def __init__(self, doc_chunks):
+    def __init__(self, doc_chunks, prompt_experiment):
+        prompt_loader = PromptLoader(prompt_experiment)
         self._workers = [
-            GPTWorker(os.environ['GPT_MODEL'], doc_chunk)
+            GPTWorker(os.environ['GPT_MODEL'], doc_chunk, prompt_loader)
             for doc_chunk in doc_chunks
         ]
-        self._grounding = GPTGrounding(os.environ['GPT_MODEL'])
+        self._grounding = GPTGrounding(os.environ['GPT_MODEL'], prompt_loader)
 
     def call(self, query):
         worker_outputs = [worker.ask(query) for worker in self._workers]

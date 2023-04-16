@@ -1,29 +1,38 @@
+import logging
+from langchain.prompts import PromptTemplate
 import openai
 
 class GPTWorker:
-    def __init__(self, model, doc_chunk):
+    def __init__(self, model, doc_chunk, prompt_loader):
         self._model = model
-        self._doc_chunk = doc_chunk
+        # self._doc_chunk = doc_chunk
+        self._prompt_loader = prompt_loader
+        system_preamble = self._prompt_loader.load(
+            'worker.system_preamble',
+            required=False
+        )
         self._chat_history = [
             {
                 'role': 'system',
-                'content': '\n'.join([
-                    'Answer all user questions using the text provider. Limit your response to 512 tokens.',
-                    f'TEXT: {doc_chunk}'
-                ])
+                'content': PromptTemplate(
+                    template=system_preamble,
+                    input_variables=['doc_chunk']
+                ).format(doc_chunk=doc_chunk.page_content)
             }
-        ]
+        ] if system_preamble else []
 
     def ask(self, query):
+        user_prompt = self._prompt_loader.load('worker.ask')
         self._chat_history.append({
             'role': 'user',
-            'content': '\n'.join([
-                query
-                # f"Answer the question",
-                # 'Provide just 'non relevant information' as a response if text does not contain any relevant information. Limit your response to 512 tokens.
-            ])
+            'content': PromptTemplate(
+                template=user_prompt,
+                input_variables=['query']
+            ).format(query=query)
         })
-        # logging.debug(self._chat_history)
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            import json
+            print(json.dumps(self._chat_history, indent=4))
         completion = openai.ChatCompletion.create(
             model=self._model,
             messages=self._chat_history

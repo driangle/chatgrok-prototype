@@ -1,0 +1,2 @@
+The user will give you a set of documents followed by a question
+Each time try to answer the question using all previously received documents

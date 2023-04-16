@@ -14,6 +14,7 @@ def parse_args(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", "-v", action="count")
     parser.add_argument("--pdf_filepath", "-f", required=True, type=str)
+    parser.add_argument("--prompt_experiment", "-pe", required=False, type=str)
     return parser.parse_args(args)
 
 
@@ -56,7 +57,7 @@ def main(args):
     logging.info(f"Split document into [{len(doc_chunks)}] chunks")
 
     # Query Loop
-    chain = Multilane(doc_chunks)
+    chain = Multilane(doc_chunks, args.prompt_experiment)
     while True:
         try:
             logging.info("Ask a Question:\n")
