@@ -4,6 +4,7 @@ from .worker import GPTWorker
 from .grounding import GPTGrounding
 from .prompt_loader import PromptLoader
 
+logger = logging.getLogger('chatgrok.multilane')
 
 class Multilane:
 
@@ -17,5 +18,5 @@ class Multilane:
 
     def call(self, query):
         worker_outputs = [worker.ask(query) for worker in self._workers]
-        logging.debug(f"Grounding...")
+        logger.debug(f"Grounding...")
         return self._grounding.ask(query, worker_outputs)

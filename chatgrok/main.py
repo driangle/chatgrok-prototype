@@ -21,7 +21,11 @@ def parse_args(args):
 def configure_logging(verbose):
     logging.basicConfig(
         format="[%(levelname)s] %(name)s - %(message)s",
-        level='DEBUG' if verbose else 'INFO',
+        level=logging.INFO
+        # level='DEBUG' if verbose else 'INFO',
+    )
+    logging.getLogger('chatgrok').setLevel(
+        logging.DEBUG if verbose else logging.INFO
     )
     logging.getLogger('unstructured_inference').setLevel(logging.ERROR)
     logging.getLogger('detectron2').setLevel(logging.ERROR)
@@ -35,6 +39,7 @@ def main(args):
     # Setup
     load_dotenv()
     configure_logging(args.verbose)
+    logger = logging.getLogger('main')
     # Configure OpenAI
     openai.organization = os.environ['OPENAPI_ORG_ID']
     openai.api_key = os.environ['OPENAPI_API_KEY']
@@ -46,27 +51,27 @@ def main(args):
     )
 
     # Ingest / Load
-    logging.info(f"Loading PDF File [{args.pdf_filepath}]...")
+    logger.info(f"Loading PDF File [{args.pdf_filepath}]...")
     pdf_doc = loader.load(args.pdf_filepath)
-    logging.info(
+    logger.info(
         f"Successfully loaded PDF File [{args.pdf_filepath}], length: [{len(pdf_doc.page_content)}]"
     )
     # Ingest / Split
-    logging.info("Splitting PDF File...")
+    logger.info("Splitting PDF File...")
     doc_chunks = splitter.split_documents([pdf_doc])
-    logging.info(f"Split document into [{len(doc_chunks)}] chunks")
+    logger.info(f"Split document into [{len(doc_chunks)}] chunks")
 
     # Query Loop
     chain = Multilane(doc_chunks, args.prompt_experiment)
     while True:
         try:
-            logging.info("Ask a Question:\n")
+            logger.info("Ask a Question:\n")
             query = input()
             if not query or not query.strip():
                 continue
-            logging.info("Thinking...\n")
+            logger.info("Thinking...\n")
             response = chain.call(query)
-            logging.info(f"\nAnswer:\n\n\t{response}\n\n")
+            logger.info(f"\nAnswer:\n\n\t{response}\n\n")
         except KeyboardInterrupt:
             break
 

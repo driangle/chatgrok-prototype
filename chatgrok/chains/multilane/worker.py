@@ -2,10 +2,11 @@ import logging
 from langchain.prompts import PromptTemplate
 import openai
 
+logger = logging.getLogger('chatgrok.multilane.worker')
+
 class GPTWorker:
     def __init__(self, model, doc_chunk, prompt_loader):
         self._model = model
-        # self._doc_chunk = doc_chunk
         self._prompt_loader = prompt_loader
         system_preamble = self._prompt_loader.load(
             'worker.system_preamble',
@@ -30,9 +31,9 @@ class GPTWorker:
                 input_variables=['query']
             ).format(query=query)
         })
-        if logging.getLogger().isEnabledFor(logging.DEBUG):
+        if logger.isEnabledFor(logging.DEBUG):
             import json
-            print(json.dumps(self._chat_history, indent=4))
+            logger.debug(json.dumps(self._chat_history, indent=4))
         completion = openai.ChatCompletion.create(
             model=self._model,
             messages=self._chat_history
