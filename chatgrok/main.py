@@ -15,6 +15,10 @@ def parse_args(args):
     parser.add_argument("--verbose", "-v", action="count")
     parser.add_argument("--pdf_filepath", "-f", required=True, type=str)
     parser.add_argument("--prompt_experiment", "-pe", required=False, type=str)
+    parser.add_argument("--splitter_chunk_size", "-scs",
+                        required=False, type=int)
+    parser.add_argument("--splitter_chunk_overlap",
+                        "-sco", required=False, type=int)
     return parser.parse_args(args)
 
 
@@ -46,19 +50,19 @@ def main(args):
 
     loader = PDFLoader()
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=4000,
-        chunk_overlap=200
+        chunk_size=args.splitter_chunk_size or 4000,
+        chunk_overlap=args.splitter_chunk_overlap or 200
     )
 
     # Ingest / Load
     logger.info(f"Loading PDF File [{args.pdf_filepath}]...")
-    pdf_doc = loader.load(args.pdf_filepath)
+    doc_chunks = loader.load(args.pdf_filepath)
     logger.info(
-        f"Successfully loaded PDF File [{args.pdf_filepath}], length: [{len(pdf_doc.page_content)}]"
+        f"Successfully loaded PDF File [{args.pdf_filepath}], initial chunks: [{len(doc_chunks)}], length: [{sum([len(c.page_content) for c in doc_chunks])}]"
     )
     # Ingest / Split
     logger.info("Splitting PDF File...")
-    doc_chunks = splitter.split_documents([pdf_doc])
+    doc_chunks = splitter.split_documents(doc_chunks)
     logger.info(f"Split document into [{len(doc_chunks)}] chunks")
 
     # Query Loop
