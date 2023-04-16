@@ -28,17 +28,6 @@ class GPTGrounding:
                 input_variables=['worker_outputs', 'query']
             ).format(worker_outputs='\n\n'.join(worker_outputs), query=query)
         })
-
-        # messages.append({
-        #     'role': 'user',
-        #     'content': '\n'.join([f'\n\nDOCUMENT:\n{worker_output}\n\n'
-        #                           for worker_output in worker_outputs
-        #                           ])
-        # })
-        # messages.append({
-        #     'role': 'user',
-        #     'content': f'QUESTION: {query}'
-        # })
         if logging.getLogger().isEnabledFor(logging.DEBUG):
             import json
             print(json.dumps(messages, indent=4))
