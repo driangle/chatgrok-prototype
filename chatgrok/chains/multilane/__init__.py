@@ -38,5 +38,5 @@ class Multilane:
             thread.join()
             logger.info("Worker thread [%d] is done", index)
 
-        logger.debug(f"Grounding...")
+        logger.info(f"Grounding...")
         return self._grounding.ask(query, worker_outputs)
