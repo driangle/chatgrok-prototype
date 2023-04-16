@@ -2,6 +2,7 @@ import logging
 from langchain.prompts import PromptTemplate
 import openai
 
+
 class GPTGrounding:
     def __init__(self, model, prompt_loader):
         self._model = model
@@ -9,7 +10,7 @@ class GPTGrounding:
 
     def ask(self, query, worker_outputs):
         system_preamble = self._prompt_loader.load(
-            'grounding.system_preamble', 
+            'grounding.system_preamble',
             required=False
         )
         messages = [
@@ -21,12 +22,16 @@ class GPTGrounding:
                 ).format()
             }
         ] if system_preamble else []
+        ask_template = self._prompt_loader.load('grounding.ask')
+        template_input_variables = {'worker_outputs':'\n\n'.join(worker_outputs)}
+        if '{query}' in ask_template:
+            template_input_variables['query'] = query
         messages.append({
             'role': 'user',
             'content': PromptTemplate(
-                template=self._prompt_loader.load('grounding.ask'),
-                input_variables=['worker_outputs', 'query']
-            ).format(worker_outputs='\n\n'.join(worker_outputs), query=query)
+                template=ask_template,
+                input_variables=list(template_input_variables.keys())
+            ).format(**template_input_variables)
         })
         if logging.getLogger().isEnabledFor(logging.DEBUG):
             import json

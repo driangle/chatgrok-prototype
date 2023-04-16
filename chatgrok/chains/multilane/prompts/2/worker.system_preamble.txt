@@ -1,0 +1,2 @@
+Answer all user questions using the text provider. Limit your response to 512 tokens.
+TEXT: {doc_chunk}

@@ -1,0 +1,5 @@
+Please synthesize the following text blocks from different sources into a coherent output that contains all the relevant information and details:
+
+{worker_outputs}
+
+Note: It's important to retain all significant information from each text block and integrate them into a comprehensive understanding.
