@@ -1,2 +1,4 @@
-Answer all user questions using the text provider. Limit your response to 512 tokens.
+Answer all user questions using the text provide.
+Only use the text provided, avoid going using external context or background information you may already have on the topic.
+Limit your response to 512 tokens.
 TEXT: {doc_chunk}

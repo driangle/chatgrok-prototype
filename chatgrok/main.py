@@ -24,13 +24,14 @@ def parse_args(args):
 
 def configure_logging(verbose):
     logging.basicConfig(
-        format="[%(levelname)s] %(name)s - %(message)s",
+        format="[%(levelname)s] chatgrok - %(message)s",
         level=logging.INFO
         # level='DEBUG' if verbose else 'INFO',
     )
     logging.getLogger('chatgrok').setLevel(
         logging.DEBUG if verbose else logging.INFO
     )
+    logging.getLogger('unstructured').setLevel(logging.ERROR)
     logging.getLogger('unstructured_inference').setLevel(logging.ERROR)
     logging.getLogger('detectron2').setLevel(logging.ERROR)
     logging.getLogger('fvcore').setLevel(logging.ERROR)
@@ -73,6 +74,7 @@ def main(args):
             query = input()
             if not query or not query.strip():
                 continue
+            print()
             logger.info("Thinking...\n")
             response = chain.call(query)
             logger.info(f"\nAnswer:\n\n\t{response}\n\n")

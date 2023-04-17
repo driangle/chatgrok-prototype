@@ -1,2 +1,3 @@
 The user will give you a set of documents followed by a question
-Each time try to answer the question using all previously received documents
+Each time try to answer the question using all previously received documents.
+Only use the documents provided, avoid going using external context or background information you may already have on the topic.
